@@ -3,44 +3,46 @@
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Wheel Spinner</title>
+
 <style>
 body {
-  font-family: Arial, sans-serif;
-  text-align: center;
-  background: #ffffff;
   margin: 0;
+  font-family: Arial, sans-serif;
+  background: #ffffff;
 }
 
-.container {
-  max-width: 500px;
-  margin: 20px auto;
+.wrapper {
+  display: flex;
+  height: 100vh;
 }
 
-textarea {
-  width: 100%;
-  height: 120px;
-  padding: 10px;
-  font-size: 14px;
-  box-sizing: border-box;
+/* LEFT SIDE (Wheel) */
+.wheel-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+canvas {
+  max-width: 90%;
+  height: auto;
 }
 
 button {
-  margin: 10px 5px;
-  padding: 10px 18px;
+  margin-top: 15px;
+  padding: 12px 20px;
   font-size: 16px;
-  border-radius: 5px;
   border: none;
-  cursor: pointer;
+  border-radius: 6px;
   background: #2f80ed;
   color: white;
+  cursor: pointer;
 }
 
 button:hover {
   background: #1c5dc9;
-}
-
-canvas {
-  margin-top: 20px;
 }
 
 #winnerDisplay {
@@ -48,23 +50,64 @@ canvas {
   font-weight: bold;
   margin-top: 15px;
 }
+
+/* RIGHT SIDE (Names) */
+.list-area {
+  width: 320px;
+  border-left: 1px solid #ddd;
+  padding: 15px;
+  box-sizing: border-box;
+}
+
+textarea {
+  width: 100%;
+  height: 90%;
+  resize: none;
+  padding: 10px;
+  font-size: 14px;
+  box-sizing: border-box;
+}
+
+/* PHONE LAYOUT */
+@media (max-width: 768px) {
+  .wrapper {
+    flex-direction: column;
+  }
+
+  .list-area {
+    width: 100%;
+    height: 200px;
+    border-left: none;
+    border-top: 1px solid #ddd;
+  }
+
+  textarea {
+    height: 150px;
+  }
+}
 </style>
 </head>
 <body>
 
-<div class="container">
-  <h2>Wheel of Names</h2>
-  <textarea id="namesInput" placeholder="Enter names (comma after winner)
+<div class="wrapper">
+
+  <div class="wheel-area">
+    <canvas id="wheel" width="400" height="400"></canvas>
+    <button onclick="spin()">Spin</button>
+    <div id="winnerDisplay"></div>
+  </div>
+
+  <div class="list-area">
+    <h3>Names</h3>
+    <textarea id="namesInput" placeholder="One per line
+Add comma after winner
+
 Example:
 Alice
 Bob,
-Charlie"></textarea><br>
-  <button onclick="createWheel()">Update</button>
+Charlie"></textarea>
+  </div>
 
-  <canvas id="wheel" width="400" height="400"></canvas><br>
-  <button onclick="spin()">Spin</button>
-
-  <div id="winnerDisplay"></div>
 </div>
 
 <script>
@@ -75,9 +118,12 @@ let spinning = false;
 
 const canvas = document.getElementById("wheel");
 const ctx = canvas.getContext("2d");
+const textarea = document.getElementById("namesInput");
 
-function createWheel() {
-  const raw = document.getElementById("namesInput").value
+textarea.addEventListener("input", updateNames);
+
+function updateNames() {
+  const raw = textarea.value
     .split("\n")
     .map(n => n.trim())
     .filter(n => n);
@@ -85,7 +131,7 @@ function createWheel() {
   names = [];
   riggedIndex = -1;
 
-  raw.forEach((name, i) => {
+  raw.forEach(name => {
     if (name.endsWith(",")) {
       name = name.slice(0, -1);
       riggedIndex = names.length;
@@ -97,11 +143,10 @@ function createWheel() {
 }
 
 function drawWheel() {
+  ctx.clearRect(0, 0, 400, 400);
   if (names.length === 0) return;
 
   const arc = 2 * Math.PI / names.length;
-
-  ctx.clearRect(0, 0, 400, 400);
 
   for (let i = 0; i < names.length; i++) {
     ctx.beginPath();
@@ -138,31 +183,26 @@ function spin() {
 
   const arc = 2 * Math.PI / names.length;
 
-  // If no comma rig, pick random
   let winnerIndex = riggedIndex >= 0
     ? riggedIndex
     : Math.floor(Math.random() * names.length);
 
-  // Calculate EXACT target rotation
-  const targetRotation =
-    (3 * Math.PI / 2) - // pointer top
+  const target =
+    (3 * Math.PI / 2) -
     (winnerIndex * arc) -
     (arc / 2);
 
-  const extraSpins = 10 * 2 * Math.PI;
+  const extraSpins = 12 * 2 * Math.PI;
 
   const startRotation = currentRotation;
-  const finalRotation = extraSpins + targetRotation;
+  const finalRotation = extraSpins + target;
 
   const duration = 5000;
   const startTime = performance.now();
 
   function animate(time) {
-    const elapsed = time - startTime;
-    const progress = Math.min(elapsed / duration, 1);
-
-    // Smooth cubic ease-out
-    const ease = 1 - Math.pow(1 - progress, 3);
+    const progress = Math.min((time - startTime) / duration, 1);
+    const ease = 1 - Math.pow(1 - progress, 4);
 
     currentRotation =
       startRotation +
@@ -182,6 +222,9 @@ function spin() {
 
   requestAnimationFrame(animate);
 }
+
+// Initial draw
+drawWheel();
 </script>
 
 </body>
