@@ -2,13 +2,13 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Wheel</title>
+<title>Wheel Spinner</title>
 
 <style>
 body {
   margin: 0;
   font-family: Arial, sans-serif;
-  background: #2f80ed; /* Blue background */
+  background: #ffffff;
 }
 
 .wrapper {
@@ -16,7 +16,7 @@ body {
   height: 100vh;
 }
 
-/* Wheel Area */
+/* LEFT SIDE (Wheel) */
 .wheel-area {
   flex: 1;
   display: flex;
@@ -26,7 +26,7 @@ body {
 }
 
 canvas {
-  max-width: 95%;
+  max-width: 90%;
   height: auto;
 }
 
@@ -36,43 +36,39 @@ button {
   font-size: 16px;
   border: none;
   border-radius: 6px;
-  background: #1c5dc9;
+  background: #2f80ed;
   color: white;
   cursor: pointer;
 }
 
 button:hover {
-  background: #144aa3;
+  background: #1c5dc9;
 }
 
 #winnerDisplay {
   font-size: 22px;
   font-weight: bold;
   margin-top: 15px;
-  color: white;
 }
 
-/* List Area */
+/* RIGHT SIDE (Names) */
 .list-area {
   width: 320px;
+  border-left: 1px solid #ddd;
   padding: 15px;
   box-sizing: border-box;
-  background: #2f80ed;
 }
 
 textarea {
   width: 100%;
-  height: 85%;
+  height: 90%;
   resize: none;
   padding: 10px;
   font-size: 14px;
   box-sizing: border-box;
-  border-radius: 6px;
-  border: none;
-  background: white; /* White text box */
 }
 
-/* Phone layout */
+/* PHONE LAYOUT */
 @media (max-width: 768px) {
   .wrapper {
     flex-direction: column;
@@ -81,6 +77,12 @@ textarea {
   .list-area {
     width: 100%;
     height: 200px;
+    border-left: none;
+    border-top: 1px solid #ddd;
+  }
+
+  textarea {
+    height: 150px;
   }
 }
 </style>
@@ -90,17 +92,20 @@ textarea {
 <div class="wrapper">
 
   <div class="wheel-area">
-    <canvas id="wheel" width="420" height="420"></canvas>
+    <canvas id="wheel" width="400" height="400"></canvas>
     <button onclick="spin()">Spin</button>
     <div id="winnerDisplay"></div>
   </div>
 
   <div class="list-area">
-    <h3 style="color:white;">Names</h3>
+    <h3>Names</h3>
     <textarea id="namesInput" placeholder="One per line
-Add comma after name to mark possible rig
+Add comma after winner
 
-Press R to toggle rig mode"></textarea>
+Example:
+Alice
+Bob,
+Charlie"></textarea>
   </div>
 
 </div>
@@ -108,7 +113,6 @@ Press R to toggle rig mode"></textarea>
 <script>
 let names = [];
 let riggedIndex = -1;
-let rigMode = false;
 let currentRotation = 0;
 let spinning = false;
 
@@ -117,13 +121,6 @@ const ctx = canvas.getContext("2d");
 const textarea = document.getElementById("namesInput");
 
 textarea.addEventListener("input", updateNames);
-
-document.addEventListener("keydown", e => {
-  if (e.key.toLowerCase() === "r") {
-    rigMode = !rigMode;
-    console.log("Rig Mode:", rigMode);
-  }
-});
 
 function updateNames() {
   const raw = textarea.value
@@ -146,44 +143,36 @@ function updateNames() {
 }
 
 function drawWheel() {
-  ctx.clearRect(0, 0, 420, 420);
+  ctx.clearRect(0, 0, 400, 400);
   if (names.length === 0) return;
 
   const arc = 2 * Math.PI / names.length;
 
   for (let i = 0; i < names.length; i++) {
     ctx.beginPath();
-    ctx.moveTo(210, 210);
-    ctx.arc(
-      210,
-      210,
-      210,
+    ctx.moveTo(200, 200);
+    ctx.arc(200, 200, 200,
       currentRotation + i * arc,
-      currentRotation + (i + 1) * arc
-    );
-
-    ctx.fillStyle = i % 2 === 0
-      ? "#3d8bfd"
-      : "#1c5dc9";
-
+      currentRotation + (i + 1) * arc);
+    ctx.fillStyle = `hsl(${i * 360 / names.length}, 70%, 55%)`;
     ctx.fill();
 
     ctx.save();
-    ctx.translate(210, 210);
+    ctx.translate(200, 200);
     ctx.rotate(currentRotation + i * arc + arc / 2);
     ctx.textAlign = "right";
     ctx.fillStyle = "white";
     ctx.font = "bold 16px Arial";
-    ctx.fillText(names[i], 190, 5);
+    ctx.fillText(names[i], 180, 5);
     ctx.restore();
   }
 
-  // Pointer (top)
+  // Pointer
   ctx.beginPath();
-  ctx.moveTo(210, 0);
-  ctx.lineTo(195, 30);
-  ctx.lineTo(225, 30);
-  ctx.fillStyle = "white";
+  ctx.moveTo(200, 0);
+  ctx.lineTo(185, 25);
+  ctx.lineTo(215, 25);
+  ctx.fillStyle = "black";
   ctx.fill();
 }
 
@@ -194,35 +183,26 @@ function spin() {
 
   const arc = 2 * Math.PI / names.length;
 
-  let winnerIndex =
-    (rigMode && riggedIndex >= 0)
-      ? riggedIndex
-      : Math.floor(Math.random() * names.length);
+  let winnerIndex = riggedIndex >= 0
+    ? riggedIndex
+    : Math.floor(Math.random() * names.length);
 
-  // Pointer is at -90 degrees (top)
-  const pointerAngle = -Math.PI / 2;
+  const target =
+    (3 * Math.PI / 2) -
+    (winnerIndex * arc) -
+    (arc / 2);
 
-  // Exact center of slice
-  const sliceCenter =
-    winnerIndex * arc + arc / 2;
-
-  // Calculate rotation needed
-  const targetRotation =
-    pointerAngle - sliceCenter;
-
-  const extraSpins =
-    (8 + Math.random() * 4) * 2 * Math.PI;
+  const extraSpins = 12 * 2 * Math.PI;
 
   const startRotation = currentRotation;
-  const finalRotation =
-    startRotation + extraSpins + targetRotation;
+  const finalRotation = extraSpins + target;
 
-  const duration = 4500 + Math.random() * 800;
+  const duration = 5000;
   const startTime = performance.now();
 
   function animate(time) {
     const progress = Math.min((time - startTime) / duration, 1);
-    const ease = 1 - Math.pow(1 - progress, 5);
+    const ease = 1 - Math.pow(1 - progress, 4);
 
     currentRotation =
       startRotation +
@@ -243,6 +223,7 @@ function spin() {
   requestAnimationFrame(animate);
 }
 
+// Initial draw
 drawWheel();
 </script>
 
