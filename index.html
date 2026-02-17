@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Custom Wheel Spinner</title>
+  <style>
+    body {
+      text-align: center;
+      font-family: Arial, sans-serif;
+    }
+
+    canvas {
+      margin-top: 20px;
+    }
+
+    button {
+      margin-top: 20px;
+      padding: 10px 20px;
+      font-size: 16px;
+    }
+  </style>
+</head>
+<body>
+
+<h2>Spin the Wheel!</h2>
+<canvas id="wheel" width="400" height="400"></canvas>
+<br>
+<button onclick="spin()">Spin</button>
+
+<script>
+const options = ["Alice", "Bob", "Charlie", "David", "Eve"];
+const chosenWinner = "Charlie"; // 👈 CHANGE THIS to whoever you want it to land on
+
+const canvas = document.getElementById("wheel");
+const ctx = canvas.getContext("2d");
+
+const numOptions = options.length;
+const arcSize = (2 * Math.PI) / numOptions;
+let angle = 0;
+
+function drawWheel() {
+  for (let i = 0; i < numOptions; i++) {
+    ctx.beginPath();
+    ctx.moveTo(200, 200);
+    ctx.arc(200, 200, 200, angle + i * arcSize, angle + (i + 1) * arcSize);
+    ctx.fillStyle = i % 2 === 0 ? "#FFDD57" : "#FF6F61";
+    ctx.fill();
+    ctx.save();
+    ctx.translate(200, 200);
+    ctx.rotate(angle + i * arcSize + arcSize / 2);
+    ctx.textAlign = "right";
+    ctx.fillStyle = "black";
+    ctx.font = "18px Arial";
+    ctx.fillText(options[i], 180, 10);
+    ctx.restore();
+  }
+}
+
+drawWheel();
+
+function spin() {
+  const winnerIndex = options.indexOf(chosenWinner);
+
+  // Calculate angle so chosen winner lands at top (pointer position)
+  const targetAngle = (3 * Math.PI / 2) - (winnerIndex * arcSize) - (arcSize / 2);
+
+  // Add extra spins for effect
+  const spins = 6 * 2 * Math.PI;
+  angle += spins + targetAngle;
+
+  ctx.clearRect(0, 0, 400, 400);
+  drawWheel();
+}
+</script>
+
+</body>
+</html>
