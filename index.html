@@ -8,7 +8,7 @@
 body {
   margin: 0;
   font-family: Arial, sans-serif;
-  background: #f4f7fb;
+  background: #2f80ed; /* Blue background */
 }
 
 .wrapper {
@@ -36,29 +36,28 @@ button {
   font-size: 16px;
   border: none;
   border-radius: 6px;
-  background: #2f80ed;
+  background: #1c5dc9;
   color: white;
   cursor: pointer;
 }
 
 button:hover {
-  background: #1c5dc9;
+  background: #144aa3;
 }
 
 #winnerDisplay {
   font-size: 22px;
   font-weight: bold;
   margin-top: 15px;
-  color: #1c5dc9;
+  color: white;
 }
 
 /* List Area */
 .list-area {
   width: 320px;
-  border-left: 2px solid #e3e9f3;
   padding: 15px;
   box-sizing: border-box;
-  background: white;
+  background: #2f80ed;
 }
 
 textarea {
@@ -68,8 +67,9 @@ textarea {
   padding: 10px;
   font-size: 14px;
   box-sizing: border-box;
-  border: 1px solid #ccc;
   border-radius: 6px;
+  border: none;
+  background: white; /* White text box */
 }
 
 /* Phone layout */
@@ -81,8 +81,6 @@ textarea {
   .list-area {
     width: 100%;
     height: 200px;
-    border-left: none;
-    border-top: 2px solid #e3e9f3;
   }
 }
 </style>
@@ -98,9 +96,9 @@ textarea {
   </div>
 
   <div class="list-area">
-    <h3>Names</h3>
+    <h3 style="color:white;">Names</h3>
     <textarea id="namesInput" placeholder="One per line
-Add comma after name if you MAY rig it
+Add comma after name to mark possible rig
 
 Press R to toggle rig mode"></textarea>
   </div>
@@ -119,6 +117,7 @@ const ctx = canvas.getContext("2d");
 const textarea = document.getElementById("namesInput");
 
 textarea.addEventListener("input", updateNames);
+
 document.addEventListener("keydown", e => {
   if (e.key.toLowerCase() === "r") {
     rigMode = !rigMode;
@@ -155,14 +154,17 @@ function drawWheel() {
   for (let i = 0; i < names.length; i++) {
     ctx.beginPath();
     ctx.moveTo(210, 210);
-    ctx.arc(210, 210, 210,
+    ctx.arc(
+      210,
+      210,
+      210,
       currentRotation + i * arc,
-      currentRotation + (i + 1) * arc);
+      currentRotation + (i + 1) * arc
+    );
 
-    // Blue-based theme
     ctx.fillStyle = i % 2 === 0
-      ? "#2f80ed"
-      : "#56a0ff";
+      ? "#3d8bfd"
+      : "#1c5dc9";
 
     ctx.fill();
 
@@ -176,12 +178,12 @@ function drawWheel() {
     ctx.restore();
   }
 
-  // Pointer
+  // Pointer (top)
   ctx.beginPath();
   ctx.moveTo(210, 0);
   ctx.lineTo(195, 30);
   ctx.lineTo(225, 30);
-  ctx.fillStyle = "#1c5dc9";
+  ctx.fillStyle = "white";
   ctx.fill();
 }
 
@@ -192,33 +194,34 @@ function spin() {
 
   const arc = 2 * Math.PI / names.length;
 
-  let winnerIndex;
+  let winnerIndex =
+    (rigMode && riggedIndex >= 0)
+      ? riggedIndex
+      : Math.floor(Math.random() * names.length);
 
-  if (rigMode && riggedIndex >= 0) {
-    winnerIndex = riggedIndex;
-  } else {
-    winnerIndex = Math.floor(Math.random() * names.length);
-  }
+  // Pointer is at -90 degrees (top)
+  const pointerAngle = -Math.PI / 2;
 
-  const pointerAngle = 3 * Math.PI / 2;
-  const target =
-    pointerAngle -
-    (winnerIndex * arc) -
-    (arc / 2);
+  // Exact center of slice
+  const sliceCenter =
+    winnerIndex * arc + arc / 2;
+
+  // Calculate rotation needed
+  const targetRotation =
+    pointerAngle - sliceCenter;
 
   const extraSpins =
     (8 + Math.random() * 4) * 2 * Math.PI;
 
   const startRotation = currentRotation;
-  const finalRotation = extraSpins + target;
+  const finalRotation =
+    startRotation + extraSpins + targetRotation;
 
   const duration = 4500 + Math.random() * 800;
   const startTime = performance.now();
 
   function animate(time) {
     const progress = Math.min((time - startTime) / duration, 1);
-
-    // Smooth ease-out quint
     const ease = 1 - Math.pow(1 - progress, 5);
 
     currentRotation =
