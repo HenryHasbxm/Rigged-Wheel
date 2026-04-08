@@ -67,16 +67,25 @@ button.spin-btn:hover {
   display: flex;
   flex-direction: column;
   color: white;
+  position: relative; /* Needed for positioning the hidden toggle */
 }
 
 .settings-item {
   margin-bottom: 20px;
 }
+
+/* MINI STEALTH TOGGLE */
+.switch-container {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+}
+
 .switch {
   position: relative;
   display: inline-block;
-  width: 50px;
-  height: 24px;
+  width: 30px; /* Smaller width */
+  height: 16px; /* Smaller height */
 }
 
 .switch input { opacity: 0; width: 0; height: 0; }
@@ -85,23 +94,26 @@ button.spin-btn:hover {
   position: absolute;
   cursor: pointer;
   top: 0; left: 0; right: 0; bottom: 0;
-  background-color: #ccc;
+  background-color: rgba(255,255,255,0.1); /* Subtle color */
   transition: .4s;
-  border-radius: 24px;
+  border-radius: 16px;
 }
 
 .slider:before {
   position: absolute;
   content: "";
-  height: 16px; width: 16px;
-  left: 4px; bottom: 4px;
-  background-color: white;
+  height: 10px; 
+  width: 10px;
+  left: 3px; 
+  bottom: 3px;
+  background-color: rgba(255,255,255,0.4);
   transition: .4s;
   border-radius: 50%;
 }
 
-input:checked + .slider { background-color: #f2d600; }
-input:checked + .slider:before { transform: translateX(26px); }
+/* Faint blue glow when active so you know it's working */
+input:checked + .slider { background-color: rgba(47, 128, 237, 0.3); }
+input:checked + .slider:before { transform: translateX(14px); }
 
 textarea {
   flex-grow: 1;
@@ -158,7 +170,6 @@ textarea {
   cursor: pointer;
 }
 
-/* PHONE LAYOUT */
 @media (max-width: 768px) {
   .wrapper { flex-direction: column; }
   .list-area { width: 100%; height: auto; border-left: none; }
@@ -183,14 +194,6 @@ textarea {
   </div>
 
   <div class="list-area">
-    <div class="switch-container">
-      <span style="font-size: 8px; font-weight: bold;">Enable Rigging</span>
-      <label class="switch">
-        <input type="checkbox" id="rigToggle">
-        <span class="slider"></span>
-      </label>
-    </div>
-
     <div class="settings-item">
       <label style="font-weight: bold; display: block; margin-bottom: 5px;">Background:</label>
       <input type="color" id="bgPicker" value="#808080" style="width: 100%; height: 35px; border:none; border-radius:5px; cursor:pointer;">
@@ -198,6 +201,13 @@ textarea {
     
     <h3 style="margin: 0 0 10px 0;">Names</h3>
     <textarea id="namesInput" placeholder="Enter names..."></textarea>
+
+    <div class="switch-container">
+      <label class="switch">
+        <input type="checkbox" id="rigToggle">
+        <span class="slider"></span>
+      </label>
+    </div>
   </div>
 </div>
 
@@ -215,9 +225,7 @@ const rigToggle = document.getElementById("rigToggle");
 const modal = document.getElementById("winnerModal");
 const winnerText = document.getElementById("winnerText");
 
-const centerX = 300; 
-const centerY = 300;
-const radius = 300;
+const centerX = 300, centerY = 300, radius = 300;
 
 bgPicker.addEventListener("input", (e) => {
     document.body.style.backgroundColor = e.target.value;
@@ -229,7 +237,6 @@ function updateNames() {
   const raw = textarea.value.split("\n").map(n => n.trim()).filter(n => n);
   names = [];
   let foundRig = -1;
-
   raw.forEach((name, index) => {
     if (name.endsWith(",")) {
       name = name.slice(0, -1);
@@ -237,7 +244,6 @@ function updateNames() {
     }
     names.push(name);
   });
-  
   riggedIndex = foundRig;
   drawWheel();
 }
@@ -246,14 +252,12 @@ function drawWheel() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   if (names.length === 0) return;
   const arc = 2 * Math.PI / names.length;
-  
   for (let i = 0; i < names.length; i++) {
     ctx.beginPath();
     ctx.moveTo(centerX, centerY);
     ctx.arc(centerX, centerY, radius, currentRotation + i * arc, currentRotation + (i + 1) * arc);
     ctx.fillStyle = `hsl(${i * 360 / names.length}, 70%, 55%)`;
     ctx.fill();
-    
     ctx.save();
     ctx.translate(centerX, centerY);
     ctx.rotate(currentRotation + i * arc + arc / 2);
@@ -263,7 +267,6 @@ function drawWheel() {
     ctx.fillText(names[i], radius - 20, 10);
     ctx.restore();
   }
-  
   ctx.beginPath();
   ctx.moveTo(centerX, 0); 
   ctx.lineTo(centerX - 20, 30); 
@@ -275,22 +278,12 @@ function drawWheel() {
 function spin() {
   if (spinning || names.length < 2) return;
   spinning = true;
-
   const arc = 2 * Math.PI / names.length;
-  
-  // LOGIC: Use riggedIndex ONLY if the switch is ON
-  let winnerIndex;
-  if (rigToggle.checked && riggedIndex !== -1) {
-    winnerIndex = riggedIndex;
-  } else {
-    winnerIndex = Math.floor(Math.random() * names.length);
-  }
-
+  let winnerIndex = (rigToggle.checked && riggedIndex !== -1) ? riggedIndex : Math.floor(Math.random() * names.length);
   const target = (3 * Math.PI / 2) - (winnerIndex * arc) - (arc / 2);
   const extraSpins = 12 * 2 * Math.PI;
   const startRotation = currentRotation;
   const finalRotation = extraSpins + target;
-
   const duration = 5000;
   const startTime = performance.now();
 
@@ -299,27 +292,19 @@ function spin() {
     const ease = 1 - Math.pow(1 - progress, 4);
     currentRotation = startRotation + (finalRotation - startRotation) * ease;
     drawWheel();
-    if (progress < 1) {
-      requestAnimationFrame(animate);
-    } else {
+    if (progress < 1) requestAnimationFrame(animate);
+    else {
       currentRotation = finalRotation % (2 * Math.PI);
       spinning = false;
-      showWinner(names[winnerIndex]);
+      confetti({ particleCount: 200, spread: 100, origin: { y: 0.6 }, zIndex: 200 });
+      winnerText.textContent = names[winnerIndex];
+      modal.style.display = "flex";
     }
   }
   requestAnimationFrame(animate);
 }
 
-function showWinner(name) {
-  confetti({ particleCount: 200, spread: 100, origin: { y: 0.6 }, zIndex: 200 });
-  winnerText.textContent = name;
-  modal.style.display = "flex";
-}
-
-function closeModal() {
-  modal.style.display = "none";
-}
-
+function closeModal() { modal.style.display = "none"; }
 drawWheel();
 </script>
 
